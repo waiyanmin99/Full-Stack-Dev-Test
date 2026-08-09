@@ -11,7 +11,7 @@ npm run dev
 ```
 
 Vite prints the local URL after startup. Before shipping a change, run `npm test`, `npm run lint`,
-and `npm run build`; the current submission passes all three checks, including 23 focused tests.
+and `npm run build`; the current submission passes all three checks, including 26 focused tests.
 
 ## What I built
 
@@ -40,10 +40,16 @@ age share one screen, and notes live only on Review.
 
 ## Why these choices
 
-- **No backend.** The brief provided static data and a frontend scaffold, and the whole point is
-  speed on-site — a live server round-trip works against that. The three JSON files are bundled
-  into the app at build time; if this became a real product, the next move would be an API so
-  pricing/rates can be updated without a redeploy (see below).
+- **No application backend.** The three supplied JSON files are bundled into the app at build time,
+  so customer lookup, pricing, drafts, and estimates do not depend on a custom server. The only
+  optional external lookup is address autocomplete; manual address entry continues to work when
+  that service is unavailable. A production version should use an authenticated API so pricing and
+  rates can be updated without a redeploy (see below).
+- **LA-biased address autocomplete.** After three characters, the street field makes a debounced
+  request to Photon's OpenStreetMap geocoder, restricted to the greater Los Angeles area. Selecting
+  a result fills street, city, state, and ZIP while leaving every field editable. The public endpoint
+  is suitable for this low-volume prototype; production should use a contracted or self-hosted
+  provider with an explicit availability and privacy policy.
 - **Refresh-safe drafts.** The in-progress estimate is saved to `localStorage` after each change,
   including the current screen, customer details, labor choices, equipment quantities, notes, and
   estimate ID. An accidental refresh or brief browser closure no longer loses field work.

@@ -469,7 +469,7 @@ function App() {
           totalSteps={totalSteps}
           onBack={onBack}
           title="Does this job need equipment or parts?"
-          subtitle="Your selected items stay at the top. Search or filter the catalog; skip for labor-only work."
+          subtitle="Search or filter the catalog. Skip for labor-only work."
           footer={<ContinueButton onClick={goNext} />}
         >
           <EquipmentQuestion
