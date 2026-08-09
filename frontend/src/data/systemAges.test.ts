@@ -3,14 +3,22 @@ import { describe, it } from 'node:test'
 import { estimatedSystemAge, formatSystemAge, matchingSystemAges } from './systemAges.ts'
 
 describe('system age guidance', () => {
-  it('matches an exact age to the appropriate range', () => {
-    assert.equal(matchingSystemAges('12')[0]?.value, '11–15 years')
+  it('suggests the exact numeric age entered', () => {
+    assert.equal(matchingSystemAges('12')[0]?.value, '12')
     assert.equal(estimatedSystemAge('12'), 12)
   })
 
-  it('supports ranges and readable estimate labels', () => {
+  it('offers common exact ages and preserves legacy saved ranges', () => {
+    assert.deepEqual(
+      matchingSystemAges('').map((age) => age.value),
+      ['1', '5', '10', '15', '20', '25', '30'],
+    )
     assert.equal(estimatedSystemAge('16–20 years'), 18)
     assert.equal(formatSystemAge('12'), '12 yrs')
-    assert.equal(formatSystemAge('Unknown'), 'Unknown')
+  })
+
+  it('rejects nonnumeric and out-of-range suggestions', () => {
+    assert.deepEqual(matchingSystemAges('Unknown'), [])
+    assert.deepEqual(matchingSystemAges('101'), [])
   })
 })

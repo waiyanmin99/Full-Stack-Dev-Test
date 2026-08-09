@@ -173,37 +173,6 @@
   gap: 10px;
 }
 
-.running-totals {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  color: var(--text-muted);
-  font-size: 11.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.25px;
-}
-
-.running-totals span {
-  display: flex;
-  flex-direction: column;
-}
-
-.running-totals strong {
-  color: var(--text-h);
-  font-size: 14px;
-  line-height: 1.25;
-}
-
-.running-totals .running-totals__grand {
-  text-align: right;
-  align-items: flex-end;
-}
-
-.running-totals__grand strong {
-  color: var(--amber-dark);
-  font-size: 17px;
-}
-
 /* ---------- shared inputs ---------- */
 
 .question-input {

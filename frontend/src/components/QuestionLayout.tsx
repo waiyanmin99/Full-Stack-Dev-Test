@@ -9,7 +9,6 @@ interface QuestionLayoutProps {
   subtitle?: string
   children: ReactNode
   footer?: ReactNode
-  runningTotals?: ReactNode
 }
 
 export default function QuestionLayout({
@@ -21,7 +20,6 @@ export default function QuestionLayout({
   subtitle,
   children,
   footer,
-  runningTotals,
 }: QuestionLayoutProps) {
   const progress = Math.round((stepNumber / totalSteps) * 100)
 
@@ -53,10 +51,9 @@ export default function QuestionLayout({
         </div>
       </main>
 
-      {(footer || runningTotals) && (
+      {footer && (
         <div className="question-footer no-print">
           <div className="question-footer__inner">
-            {runningTotals}
             {footer}
           </div>
         </div>

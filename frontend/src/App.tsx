@@ -69,16 +69,6 @@ function ContinueButton({
   )
 }
 
-function RunningTotals({ labor, parts, total }: { labor: number; parts: number; total: number }) {
-  return (
-    <div className="running-totals" aria-label="Current estimate totals" aria-live="polite">
-      <span>Labor <strong>{formatCurrency(labor)}</strong></span>
-      <span>Parts <strong>{formatCurrency(parts)}</strong></span>
-      <span className="running-totals__grand">Total <strong>{formatCurrency(total)}</strong></span>
-    </div>
-  )
-}
-
 function App() {
   const [initialDraft] = useState(() => loadDraft(generateEstimateId()))
   const [stepIndex, setStepIndex] = useState(initialDraft.stepIndex)
@@ -115,7 +105,6 @@ function App() {
   const rangeMaxSubtotal = range.max + partsSubtotal
   const rangeMin = rangeMinSubtotal * (1 + taxEstimate.ratePercent / 100)
   const rangeMax = rangeMaxSubtotal * (1 + taxEstimate.ratePercent / 100)
-  const runningTotals = <RunningTotals labor={laborTotal} parts={partsSubtotal} total={total} />
   const recommendations = useMemo(
     () => recommendEquipment(customerForm, jobType, level, equipment),
     [customerForm, jobType, level],
@@ -325,7 +314,6 @@ function App() {
           eyebrow="Let's build an estimate"
           title="Is this for an existing customer?"
           subtitle="Look them up to auto-fill their property, or start fresh for a new lead."
-          runningTotals={runningTotals}
         >
           <LookupQuestion
             customers={allCustomers}
@@ -347,7 +335,6 @@ function App() {
           onBack={onBack}
           title="Who's this estimate for?"
           footer={<ContinueButton disabled={!nameAddressValid} onClick={goNext} />}
-          runningTotals={runningTotals}
         >
           <NameAddressQuestion
             name={customerForm.name}
@@ -374,7 +361,6 @@ function App() {
           title="What's the best phone number?"
           subtitle="Optional — you can skip this."
           footer={<ContinueButton onClick={goNext} />}
-          runningTotals={runningTotals}
         >
           <PhoneQuestion
             value={customerForm.phone}
@@ -390,7 +376,6 @@ function App() {
           totalSteps={totalSteps}
           onBack={onBack}
           title="Is this a residential or commercial property?"
-          runningTotals={runningTotals}
         >
           <ChoiceQuestion
             value={customerForm.propertyType}
@@ -412,7 +397,6 @@ function App() {
           title="Tell us about the property and system"
           subtitle="Add what you know; all three fields are optional."
           footer={<ContinueButton onClick={goNext} />}
-          runningTotals={runningTotals}
         >
           <SystemDetailsQuestion
             squareFootage={customerForm.squareFootage}
@@ -433,7 +417,6 @@ function App() {
           onBack={onBack}
           title="What type of job is this?"
           footer={<ContinueButton disabled={!jobType} onClick={goNext} />}
-          runningTotals={runningTotals}
         >
           <ChoiceQuestion
             value={jobType}
@@ -454,7 +437,6 @@ function App() {
           onBack={onBack}
           title="What level of work does it need?"
           footer={<ContinueButton disabled={!level} onClick={goNext} />}
-          runningTotals={runningTotals}
         >
           <ChoiceQuestion
             value={level}
@@ -476,7 +458,6 @@ function App() {
           title="How many hours will this job take?"
           subtitle="We've set a typical starting point — drag to adjust."
           footer={<ContinueButton onClick={goNext} />}
-          runningTotals={runningTotals}
         >
           <HoursQuestion rate={rate} hours={hours} onChange={setHours} />
         </QuestionLayout>
@@ -490,7 +471,6 @@ function App() {
           title="Does this job need equipment or parts?"
           subtitle="Your selected items stay at the top. Search or filter the catalog; skip for labor-only work."
           footer={<ContinueButton onClick={goNext} />}
-          runningTotals={runningTotals}
         >
           <EquipmentQuestion
             catalog={equipment}

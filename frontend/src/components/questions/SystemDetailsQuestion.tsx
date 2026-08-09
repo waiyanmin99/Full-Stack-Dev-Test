@@ -130,8 +130,11 @@ export default function SystemDetailsQuestion({
         <span className="field__label">Approximate age in years</span>
         <input
           ref={ageRef}
-          type="text"
+          type="number"
           inputMode="numeric"
+          min="0"
+          max="100"
+          step="1"
           role="combobox"
           aria-autocomplete="list"
           aria-expanded={ageSuggestionsOpen}
@@ -145,7 +148,7 @@ export default function SystemDetailsQuestion({
             setAgeSuggestionsOpen(true)
           }}
           onKeyDown={handleAgeKeyDown}
-          placeholder="Type an exact age or choose a range"
+          placeholder="12"
         />
         {ageSuggestionsOpen && (
           <div id="system-age-suggestions" className="system-suggestions" role="listbox">
@@ -164,7 +167,7 @@ export default function SystemDetailsQuestion({
               >
                 <span className="system-suggestion__topline">
                   <strong>{age.label}</strong>
-                  <small>Age guidance</small>
+                  <small>years</small>
                 </span>
                 <span>{age.description}</span>
               </button>
