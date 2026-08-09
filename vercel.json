@@ -1,5 +1,0 @@
-{
-  "installCommand": "echo 'skipping root install'",
-  "buildCommand": "cd frontend && npm install && npm run build",
-  "outputDirectory": "frontend/dist"
-}
