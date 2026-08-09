@@ -35,7 +35,10 @@ export interface SelectedEquipment {
 
 export interface CustomerFormState {
   name: string
-  address: string
+  addressLine: string
+  city: string
+  state: string
+  zip: string
   phone: string
   propertyType: PropertyType
   squareFootage: string
@@ -45,7 +48,10 @@ export interface CustomerFormState {
 
 export const EMPTY_CUSTOMER_FORM: CustomerFormState = {
   name: '',
-  address: '',
+  addressLine: '',
+  city: '',
+  state: '',
+  zip: '',
   phone: '',
   propertyType: 'residential',
   squareFootage: '',

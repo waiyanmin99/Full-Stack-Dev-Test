@@ -87,7 +87,14 @@ export default function ReviewStep({
           <div className="estimate-doc__grid">
             <div>
               <strong>{customer.name || 'Walk-in customer'}</strong>
-              <div>{customer.address || '—'}</div>
+              <div>{customer.addressLine || '—'}</div>
+              {(customer.city || customer.state || customer.zip) && (
+                <div>
+                  {[customer.city, [customer.state, customer.zip].filter(Boolean).join(' ')]
+                    .filter(Boolean)
+                    .join(', ')}
+                </div>
+              )}
               {customer.phone && <div>{customer.phone}</div>}
             </div>
             <div>

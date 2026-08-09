@@ -4,6 +4,7 @@ import { EMPTY_CUSTOMER_FORM, type CustomerFormState, type Customer, type Select
 import { customers, equipment, equipmentCategories, findRate, jobTypes, levelsForJobType } from './lib/normalize'
 import { defaultHoursFor, generateEstimateId, laborCost, laborRange, partsCost } from './lib/estimate'
 import { formatCurrency } from './lib/format'
+import { parseAddress } from './lib/address'
 import { JOB_TYPE_LABELS, LEVEL_LABELS } from './lib/labels'
 import { STEPS } from './lib/steps'
 import QuestionLayout from './components/QuestionLayout'
@@ -17,9 +18,13 @@ import NotesQuestion from './components/questions/NotesQuestion'
 import ReviewStep from './components/ReviewStep'
 
 function customerToForm(customer: Customer): CustomerFormState {
+  const address = parseAddress(customer.address)
   return {
     name: customer.name,
-    address: customer.address,
+    addressLine: address.line1,
+    city: address.city,
+    state: address.state,
+    zip: address.zip,
     phone: customer.phone ?? '',
     propertyType: customer.propertyType,
     squareFootage: customer.squareFootage ? String(customer.squareFootage) : '',
@@ -140,6 +145,13 @@ function App() {
   const totalSteps = STEPS.length
   const onBack = stepIndex > 0 ? goBack : undefined
 
+  const nameAddressValid =
+    customerForm.name.trim() !== '' &&
+    customerForm.addressLine.trim() !== '' &&
+    customerForm.city.trim() !== '' &&
+    customerForm.state.trim() !== '' &&
+    customerForm.zip.trim() !== ''
+
   return (
     <div className="app-shell">
       <header className="app-header no-print">
@@ -176,20 +188,21 @@ function App() {
           totalSteps={totalSteps}
           onBack={onBack}
           title="Who's this estimate for?"
-          footer={
-            <ContinueButton
-              disabled={customerForm.name.trim() === '' || customerForm.address.trim() === ''}
-              onClick={goNext}
-            />
-          }
+          footer={<ContinueButton disabled={!nameAddressValid} onClick={goNext} />}
         >
           <NameAddressQuestion
             name={customerForm.name}
-            address={customerForm.address}
+            addressLine={customerForm.addressLine}
+            city={customerForm.city}
+            state={customerForm.state}
+            zip={customerForm.zip}
             onChangeName={(v) => handleChangeForm({ name: v })}
-            onChangeAddress={(v) => handleChangeForm({ address: v })}
+            onChangeAddressLine={(v) => handleChangeForm({ addressLine: v })}
+            onChangeCity={(v) => handleChangeForm({ city: v })}
+            onChangeState={(v) => handleChangeForm({ state: v })}
+            onChangeZip={(v) => handleChangeForm({ zip: v })}
             onSubmit={goNext}
-            canSubmit={customerForm.name.trim() !== '' && customerForm.address.trim() !== ''}
+            canSubmit={nameAddressValid}
           />
         </QuestionLayout>
       )}
