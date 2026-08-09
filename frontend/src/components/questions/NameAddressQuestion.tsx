@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import { US_STATES } from '../../lib/address'
 import {
   fetchAddressSuggestions,
+  matchingKnownAddresses,
+  verifyAddressZip,
   type AddressSuggestion,
 } from '../../lib/addressAutocomplete'
+import type { Customer } from '../../types'
 
 interface NameAddressQuestionProps {
   name: string
@@ -11,6 +14,7 @@ interface NameAddressQuestionProps {
   city: string
   state: string
   zip: string
+  knownCustomers: Customer[]
   onChangeName: (value: string) => void
   onChangeAddressLine: (value: string) => void
   onChangeCity: (value: string) => void
@@ -26,6 +30,7 @@ export default function NameAddressQuestion({
   city,
   state,
   zip,
+  knownCustomers,
   onChangeName,
   onChangeAddressLine,
   onChangeCity,
@@ -37,14 +42,28 @@ export default function NameAddressQuestion({
   const addressRef = useRef<HTMLInputElement>(null)
   const cityRef = useRef<HTMLInputElement>(null)
   const zipRef = useRef<HTMLInputElement>(null)
+  const verificationControllerRef = useRef<AbortController | null>(null)
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([])
   const [addressSuggestionsOpen, setAddressSuggestionsOpen] = useState(false)
   const [addressLookupEnabled, setAddressLookupEnabled] = useState(false)
+  const knownAddressSuggestions = useMemo(
+    () => matchingKnownAddresses(addressLine, knownCustomers),
+    [addressLine, knownCustomers],
+  )
+  const combinedAddressSuggestions = useMemo(() => {
+    const seen = new Set<string>()
+    return [...knownAddressSuggestions, ...addressSuggestions].filter((suggestion) => {
+      const key = suggestion.label.toLowerCase()
+      if (seen.has(key)) return false
+      seen.add(key)
+      return true
+    }).slice(0, 6)
+  }, [knownAddressSuggestions, addressSuggestions])
 
   useEffect(() => {
     if (!addressLookupEnabled) return
     const query = addressLine.trim()
-    if (query.length < 3) return
+    if (query.length < 2) return
 
     const controller = new AbortController()
     const timeout = window.setTimeout(() => {
@@ -58,7 +77,7 @@ export default function NameAddressQuestion({
             setAddressSuggestions([])
           }
         })
-    }, 400)
+    }, 250)
 
     return () => {
       window.clearTimeout(timeout)
@@ -66,20 +85,37 @@ export default function NameAddressQuestion({
     }
   }, [addressLine, addressLookupEnabled])
 
+  useEffect(() => () => verificationControllerRef.current?.abort(), [])
+
   function focusNext(e: KeyboardEvent, next?: () => void) {
     if (e.key !== 'Enter') return
     if (next) next()
     else if (canSubmit) onSubmit()
   }
 
-  function selectAddress(suggestion: AddressSuggestion) {
+  async function selectAddress(suggestion: AddressSuggestion) {
+    verificationControllerRef.current?.abort()
+    const controller = new AbortController()
+    verificationControllerRef.current = controller
+
     onChangeAddressLine(suggestion.addressLine)
     if (suggestion.city) onChangeCity(suggestion.city)
     if (suggestion.state) onChangeState(suggestion.state)
-    if (suggestion.zip) onChangeZip(suggestion.zip)
+    onChangeZip('')
     setAddressLookupEnabled(false)
     setAddressSuggestionsOpen(false)
     cityRef.current?.focus()
+
+    try {
+      const verifiedZip = await verifyAddressZip(suggestion, controller.signal)
+      if (!controller.signal.aborted) onChangeZip(verifiedZip || suggestion.zip)
+    } catch (error: unknown) {
+      if (!(error instanceof DOMException && error.name === 'AbortError')) {
+        // A house-level Photon ZIP is a safe fallback. Street-level suggestions
+        // deliberately carry no ZIP so staff can enter it manually if verification fails.
+        if (!controller.signal.aborted && suggestion.zip) onChangeZip(suggestion.zip)
+      }
+    }
   }
 
   function handleAddressKeyDown(e: KeyboardEvent<HTMLInputElement>) {
@@ -87,9 +123,9 @@ export default function NameAddressQuestion({
       setAddressSuggestionsOpen(false)
       return
     }
-    if (e.key === 'Enter' && addressSuggestionsOpen && addressSuggestions.length > 0) {
+    if (e.key === 'Enter' && addressSuggestionsOpen && combinedAddressSuggestions.length > 0) {
       e.preventDefault()
-      selectAddress(addressSuggestions[0])
+      void selectAddress(combinedAddressSuggestions[0])
       return
     }
     focusNext(e, () => cityRef.current?.focus())
@@ -121,7 +157,7 @@ export default function NameAddressQuestion({
           autoComplete="street-address"
           role="combobox"
           aria-autocomplete="list"
-          aria-expanded={addressSuggestionsOpen && addressSuggestions.length > 0}
+          aria-expanded={addressSuggestionsOpen && combinedAddressSuggestions.length > 0}
           aria-controls="address-suggestions"
           onFocus={() => {
             setAddressLookupEnabled(true)
@@ -132,13 +168,13 @@ export default function NameAddressQuestion({
             onChangeAddressLine(e.target.value)
             setAddressLookupEnabled(true)
             setAddressSuggestionsOpen(true)
-            if (e.target.value.trim().length < 3) setAddressSuggestions([])
+            setAddressSuggestions([])
           }}
           onKeyDown={handleAddressKeyDown}
         />
-        {addressSuggestionsOpen && addressSuggestions.length > 0 && (
+        {addressSuggestionsOpen && combinedAddressSuggestions.length > 0 && (
           <div id="address-suggestions" className="address-suggestions" role="listbox">
-            {addressSuggestions.map((suggestion) => (
+            {combinedAddressSuggestions.map((suggestion) => (
               <button
                 key={suggestion.id}
                 type="button"
@@ -146,12 +182,14 @@ export default function NameAddressQuestion({
                 role="option"
                 aria-selected={addressLine === suggestion.addressLine}
                 onMouseDown={(event) => event.preventDefault()}
-                onClick={() => selectAddress(suggestion)}
+                onClick={() => void selectAddress(suggestion)}
               >
                 {suggestion.label}
               </button>
             ))}
-            <small className="address-suggestions__credit">© OpenStreetMap contributors</small>
+            {addressSuggestions.length > 0 && (
+              <small className="address-suggestions__credit">© OpenStreetMap contributors</small>
+            )}
           </div>
         )}
       </label>

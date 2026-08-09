@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 import { describe, it } from 'node:test'
-import { parsePhotonSuggestions } from './addressAutocomplete.ts'
+import {
+  matchingKnownAddresses,
+  parsePhotonSuggestions,
+  parseVerifiedZip,
+} from './addressAutocomplete.ts'
 
 describe('address autocomplete', () => {
   it('normalizes a Photon result into the customer address fields', () => {
@@ -45,5 +49,55 @@ describe('address autocomplete', () => {
         { properties: { ...properties, countrycode: 'CA' } },
       ],
     }).length, 1)
+  })
+
+  it('preserves the typed house number for street-level suggestions', () => {
+    const suggestions = parsePhotonSuggestions({
+      features: [{
+        properties: {
+          osm_type: 'W',
+          osm_id: 456,
+          street: 'Muscatel Avenue',
+          city: 'Rosemead',
+          state: 'California',
+          postcode: '91776',
+          countrycode: 'US',
+        },
+      }],
+    }, '315 Muscatel Ave')
+
+    assert.equal(suggestions[0]?.addressLine, '315 Muscatel Avenue')
+    assert.equal(suggestions[0]?.label, '315 Muscatel Avenue, Rosemead, CA')
+    assert.equal(suggestions[0]?.zip, '')
+  })
+
+  it('uses the exact-address ZIP returned by the Census geocoder', () => {
+    assert.equal(parseVerifiedZip({
+      result: {
+        addressMatches: [{
+          addressComponents: { zip: '91770' },
+        }],
+      },
+    }), '91770')
+    assert.equal(parseVerifiedZip({ result: { addressMatches: [] } }), '')
+  })
+
+  it('matches known customer addresses from partial typing', () => {
+    const suggestions = matchingKnownAddresses('315 Cal', [{
+      id: 'LOCAL-1',
+      name: 'Jane Doe',
+      address: '315 California St, Arcadia, CA 91006',
+      propertyType: 'residential',
+      systemType: 'Central AC',
+    }])
+
+    assert.deepEqual(suggestions[0], {
+      id: 'known-LOCAL-1',
+      label: '315 California St, Arcadia, CA 91006',
+      addressLine: '315 California St',
+      city: 'Arcadia',
+      state: 'CA',
+      zip: '91006',
+    })
   })
 })

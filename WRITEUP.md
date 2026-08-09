@@ -11,7 +11,7 @@ npm run dev
 ```
 
 Vite prints the local URL after startup. Before shipping a change, run `npm test`, `npm run lint`,
-and `npm run build`; the current submission passes all three checks, including 26 focused tests.
+and `npm run build`; the current submission passes all three checks, including 29 focused tests.
 
 ## What I built
 
@@ -45,11 +45,14 @@ age share one screen, and notes live only on Review.
   optional external lookup is address autocomplete; manual address entry continues to work when
   that service is unavailable. A production version should use an authenticated API so pricing and
   rates can be updated without a redeploy (see below).
-- **LA-biased address autocomplete.** After three characters, the street field makes a debounced
-  request to Photon's OpenStreetMap geocoder, restricted to the greater Los Angeles area. Selecting
-  a result fills street, city, state, and ZIP while leaving every field editable. The public endpoint
-  is suitable for this low-volume prototype; production should use a contracted or self-hosted
-  provider with an explicit availability and privacy policy.
+- **LA-biased address autocomplete.** Known customer addresses are matched locally after two
+  characters and appear immediately, ahead of network results. The street field also makes a short,
+  debounced request to Photon's OpenStreetMap geocoder for new greater-Los-Angeles addresses. Selecting
+  a result preserves the typed house number and fills street, city, and state. Because a street can
+  cross ZIP boundaries, ZIP is then verified for the complete numbered address through the U.S.
+  Census geocoder before it is filled. Every field remains editable. These public endpoints are
+  suitable for this low-volume prototype; production should use a contracted or self-hosted provider
+  with an explicit availability and privacy policy.
 - **Refresh-safe drafts.** The in-progress estimate is saved to `localStorage` after each change,
   including the current screen, customer details, labor choices, equipment quantities, notes, and
   estimate ID. An accidental refresh or brief browser closure no longer loses field work.

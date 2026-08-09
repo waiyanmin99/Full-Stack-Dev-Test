@@ -342,6 +342,7 @@ function App() {
             city={customerForm.city}
             state={customerForm.state}
             zip={customerForm.zip}
+            knownCustomers={allCustomers}
             onChangeName={(v) => handleChangeForm({ name: v })}
             onChangeAddressLine={(v) => handleChangeForm({ addressLine: v })}
             onChangeCity={(v) => handleChangeForm({ city: v })}
