@@ -3,15 +3,16 @@ import './App.css'
 import { EMPTY_CUSTOMER_FORM, type CustomerFormState, type Customer, type SelectedEquipment } from './types'
 import { customers, equipment, equipmentCategories, findRate, jobTypes, levelsForJobType } from './lib/normalize'
 import { defaultHoursFor, generateEstimateId, laborCost, laborRange, partsCost } from './lib/estimate'
-import { formatCurrency } from './lib/format'
+import { formatCurrency, phoneDigits } from './lib/format'
 import { parseAddress } from './lib/address'
 import { JOB_TYPE_LABELS, LEVEL_LABELS } from './lib/labels'
 import { STEPS } from './lib/steps'
 import QuestionLayout from './components/QuestionLayout'
 import ChoiceQuestion from './components/questions/ChoiceQuestion'
 import TextQuestion from './components/questions/TextQuestion'
+import PhoneQuestion from './components/questions/PhoneQuestion'
 import HoursQuestion from './components/questions/HoursQuestion'
-import LookupQuestion from './components/questions/LookupQuestion'
+import LookupQuestion, { type LookupMode } from './components/questions/LookupQuestion'
 import NameAddressQuestion from './components/questions/NameAddressQuestion'
 import EquipmentQuestion from './components/questions/EquipmentQuestion'
 import NotesQuestion from './components/questions/NotesQuestion'
@@ -25,7 +26,7 @@ function customerToForm(customer: Customer): CustomerFormState {
     city: address.city,
     state: address.state,
     zip: address.zip,
-    phone: customer.phone ?? '',
+    phone: phoneDigits(customer.phone ?? ''),
     propertyType: customer.propertyType,
     squareFootage: customer.squareFootage ? String(customer.squareFootage) : '',
     systemType: customer.systemType ?? '',
@@ -51,6 +52,7 @@ function ContinueButton({
 
 function App() {
   const [stepIndex, setStepIndex] = useState(0)
+  const [lookupMode, setLookupMode] = useState<LookupMode>('ask')
 
   const [customerForm, setCustomerForm] = useState<CustomerFormState>(EMPTY_CUSTOMER_FORM)
 
@@ -132,6 +134,7 @@ function App() {
 
   function handleStartOver() {
     setStepIndex(0)
+    setLookupMode('ask')
     setCustomerForm(EMPTY_CUSTOMER_FORM)
     setJobType('')
     setLevel('')
@@ -143,7 +146,12 @@ function App() {
   const stepKey = STEPS[stepIndex]
   const stepNumber = stepIndex + 1
   const totalSteps = STEPS.length
-  const onBack = stepIndex > 0 ? goBack : undefined
+  const onBack =
+    stepKey === 'lookup' && lookupMode === 'search'
+      ? () => setLookupMode('ask')
+      : stepIndex > 0
+        ? goBack
+        : undefined
 
   const nameAddressValid =
     customerForm.name.trim() !== '' &&
@@ -175,6 +183,8 @@ function App() {
         >
           <LookupQuestion
             customers={customers}
+            mode={lookupMode}
+            onModeChange={setLookupMode}
             onSelectCustomer={handleSelectCustomer}
             onStartBlank={handleStartBlank}
             onContinue={goNext}
@@ -216,13 +226,10 @@ function App() {
           subtitle="Optional — you can skip this."
           footer={<ContinueButton onClick={goNext} />}
         >
-          <TextQuestion
-            type="tel"
+          <PhoneQuestion
             value={customerForm.phone}
             onChange={(v) => handleChangeForm({ phone: v })}
             onSubmit={goNext}
-            canSubmit
-            placeholder="(217) 555-0100"
           />
         </QuestionLayout>
       )}

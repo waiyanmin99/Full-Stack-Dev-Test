@@ -182,6 +182,31 @@
   resize: vertical;
 }
 
+.phone-field {
+  display: flex;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.phone-field__prefix {
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  color: var(--text-muted);
+  font-size: 17px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.phone-field__input {
+  flex: 1;
+  min-width: 0;
+  letter-spacing: 0.3px;
+}
+
 .question-input:focus,
 input:focus,
 textarea:focus,

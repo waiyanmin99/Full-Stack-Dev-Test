@@ -1,5 +1,5 @@
 import type { CustomerFormState, Equipment, LaborRate, SelectedEquipment } from '../types'
-import { formatCurrency, formatHours } from '../lib/format'
+import { formatCurrency, formatHours, formatUSPhone } from '../lib/format'
 import { JOB_TYPE_LABELS } from '../lib/labels'
 import QuestionLayout from './QuestionLayout'
 
@@ -95,7 +95,7 @@ export default function ReviewStep({
                     .join(', ')}
                 </div>
               )}
-              {customer.phone && <div>{customer.phone}</div>}
+              {customer.phone && <div>+1 {formatUSPhone(customer.phone)}</div>}
             </div>
             <div>
               <div>{customer.propertyType === 'commercial' ? 'Commercial' : 'Residential'} property</div>

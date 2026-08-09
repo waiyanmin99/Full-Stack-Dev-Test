@@ -2,8 +2,12 @@ import { useMemo, useState } from 'react'
 import type { Customer } from '../../types'
 import { formatDate } from '../../lib/format'
 
+export type LookupMode = 'ask' | 'search'
+
 interface LookupQuestionProps {
   customers: Customer[]
+  mode: LookupMode
+  onModeChange: (mode: LookupMode) => void
   onSelectCustomer: (customer: Customer) => void
   onStartBlank: () => void
   onContinue: () => void
@@ -11,11 +15,12 @@ interface LookupQuestionProps {
 
 export default function LookupQuestion({
   customers,
+  mode,
+  onModeChange,
   onSelectCustomer,
   onStartBlank,
   onContinue,
 }: LookupQuestionProps) {
-  const [mode, setMode] = useState<'ask' | 'search'>('ask')
   const [query, setQuery] = useState('')
 
   const results = useMemo(() => {
@@ -34,7 +39,7 @@ export default function LookupQuestion({
   if (mode === 'ask') {
     return (
       <div className="choice-list">
-        <button type="button" className="choice-option" onClick={() => setMode('search')}>
+        <button type="button" className="choice-option" onClick={() => onModeChange('search')}>
           <span className="choice-option__label">Yes, look them up</span>
           <span className="choice-option__helper">Find an existing customer record</span>
         </button>
