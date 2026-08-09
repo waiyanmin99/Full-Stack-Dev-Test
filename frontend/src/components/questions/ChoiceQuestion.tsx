@@ -8,13 +8,15 @@ interface ChoiceQuestionProps {
   options: ChoiceOption[]
   value: string
   onSelect: (value: string) => void
-  onContinue: () => void
+  onContinue?: () => void
 }
 
 export default function ChoiceQuestion({ options, value, onSelect, onContinue }: ChoiceQuestionProps) {
   function handleClick(optionValue: string) {
     onSelect(optionValue)
-    window.setTimeout(onContinue, 220)
+    if (onContinue) {
+      window.setTimeout(onContinue, 220)
+    }
   }
 
   return (

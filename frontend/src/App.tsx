@@ -432,6 +432,7 @@ function App() {
           totalSteps={totalSteps}
           onBack={onBack}
           title="What type of job is this?"
+          footer={<ContinueButton disabled={!jobType} onClick={goNext} />}
           runningTotals={runningTotals}
         >
           <ChoiceQuestion
@@ -441,7 +442,6 @@ function App() {
               setLevel('')
               setHours(0)
             }}
-            onContinue={goNext}
             options={jobTypes.map((jt) => ({ value: jt, label: JOB_TYPE_LABELS[jt] ?? jt }))}
           />
         </QuestionLayout>
@@ -453,12 +453,12 @@ function App() {
           totalSteps={totalSteps}
           onBack={onBack}
           title="What level of work does it need?"
+          footer={<ContinueButton disabled={!level} onClick={goNext} />}
           runningTotals={runningTotals}
         >
           <ChoiceQuestion
             value={level}
             onSelect={handleSelectLevel}
-            onContinue={goNext}
             options={levelsForJobType(jobType).map((r) => ({
               value: r.level,
               label: LEVEL_LABELS[r.level] ?? r.level,
