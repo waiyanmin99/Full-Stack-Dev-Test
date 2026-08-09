@@ -1,4 +1,4 @@
-import type { Customer, Equipment, LaborRate, PropertyType } from '../types'
+import type { Customer, Equipment, LaborRate } from '../types'
 import rawCustomers from '../data/customers.json'
 import rawEquipment from '../data/equipment.json'
 import rawLaborRates from '../data/laborRates.json'
@@ -8,58 +8,14 @@ import rawLaborRates from '../data/laborRates.json'
 // (propertyType/property_type, squareFootage/sqft, baseCost/base_cost).
 // Normalizing here means every consumer downstream can rely on one shape.
 
-interface RawCustomer {
-  id: string
-  name: string
-  address: string
-  phone?: string
-  propertyType?: string
-  property_type?: string
-  squareFootage?: number
-  sqft?: number
-  systemType: string
-  systemAge?: number
-  lastServiceDate?: string
-}
+import {
+  normalizeCustomer,
+  normalizeEquipment,
+  type RawCustomer,
+  type RawEquipment,
+} from './normalizers'
 
-interface RawEquipment {
-  id: string
-  name: string
-  category: string
-  brand: string
-  modelNumber: string
-  baseCost?: number
-  base_cost?: number
-}
-
-function normalizePropertyType(value: string | undefined): PropertyType {
-  return value?.toLowerCase() === 'commercial' ? 'commercial' : 'residential'
-}
-
-function normalizeCustomer(raw: RawCustomer): Customer {
-  return {
-    id: raw.id,
-    name: raw.name,
-    address: raw.address,
-    phone: raw.phone,
-    propertyType: normalizePropertyType(raw.propertyType ?? raw.property_type),
-    squareFootage: raw.squareFootage ?? raw.sqft,
-    systemType: raw.systemType,
-    systemAge: raw.systemAge,
-    lastServiceDate: raw.lastServiceDate,
-  }
-}
-
-function normalizeEquipment(raw: RawEquipment): Equipment {
-  return {
-    id: raw.id,
-    name: raw.name,
-    category: raw.category,
-    brand: raw.brand,
-    modelNumber: raw.modelNumber,
-    baseCost: raw.baseCost ?? raw.base_cost ?? 0,
-  }
-}
+export { normalizeCustomer, normalizeEquipment, normalizePropertyType } from './normalizers'
 
 export const customers: Customer[] = (rawCustomers as RawCustomer[]).map(normalizeCustomer)
 export const equipment: Equipment[] = (rawEquipment as RawEquipment[]).map(normalizeEquipment)

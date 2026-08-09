@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import type { Customer } from '../../types'
 import { formatDate } from '../../lib/format'
+import { formatCurrency } from '../../lib/format'
+import type { SavedEstimate } from '../../lib/estimateStore'
 
 export type LookupMode = 'ask' | 'search'
 
@@ -11,6 +13,8 @@ interface LookupQuestionProps {
   onSelectCustomer: (customer: Customer) => void
   onStartBlank: () => void
   onContinue: () => void
+  recentEstimates: SavedEstimate[]
+  onResumeEstimate: (estimate: SavedEstimate) => void
 }
 
 export default function LookupQuestion({
@@ -20,6 +24,8 @@ export default function LookupQuestion({
   onSelectCustomer,
   onStartBlank,
   onContinue,
+  recentEstimates,
+  onResumeEstimate,
 }: LookupQuestionProps) {
   const [query, setQuery] = useState('')
 
@@ -38,22 +44,50 @@ export default function LookupQuestion({
 
   if (mode === 'ask') {
     return (
-      <div className="choice-list">
-        <button type="button" className="choice-option" onClick={() => onModeChange('search')}>
-          <span className="choice-option__label">Yes, look them up</span>
-          <span className="choice-option__helper">Find an existing customer record</span>
-        </button>
-        <button
-          type="button"
-          className="choice-option"
-          onClick={() => {
-            onStartBlank()
-            window.setTimeout(onContinue, 200)
-          }}
-        >
-          <span className="choice-option__label">No, it&apos;s a new customer</span>
-          <span className="choice-option__helper">Start a blank estimate</span>
-        </button>
+      <div className="lookup-home">
+        <div className="choice-list">
+          <button type="button" className="choice-option" onClick={() => onModeChange('search')}>
+            <span className="choice-option__label">Yes, look them up</span>
+            <span className="choice-option__helper">Find an existing customer record</span>
+          </button>
+          <button
+            type="button"
+            className="choice-option"
+            onClick={() => {
+              onStartBlank()
+              window.setTimeout(onContinue, 200)
+            }}
+          >
+            <span className="choice-option__label">No, it&apos;s a new customer</span>
+            <span className="choice-option__helper">Start a blank estimate</span>
+          </button>
+        </div>
+
+        {recentEstimates.length > 0 && (
+          <section className="recent-estimates" aria-labelledby="recent-estimates-title">
+            <div className="recent-estimates__heading">
+              <h2 id="recent-estimates-title">Recent estimates</h2>
+              <span>Saved on this device</span>
+            </div>
+            {recentEstimates.slice(0, 3).map((estimate) => (
+              <button
+                type="button"
+                className="recent-estimate"
+                key={estimate.estimateId}
+                onClick={() => onResumeEstimate(estimate)}
+              >
+                <span>
+                  <strong>{estimate.customerForm.name || 'Unnamed customer'}</strong>
+                  <small>{estimate.estimateId}</small>
+                </span>
+                <span>
+                  <strong>{formatCurrency(estimate.total)}</strong>
+                  <small>{formatDate(estimate.savedAt)}</small>
+                </span>
+              </button>
+            ))}
+          </section>
+        )}
       </div>
     )
   }

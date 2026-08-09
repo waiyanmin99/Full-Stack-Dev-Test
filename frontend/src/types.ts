@@ -8,7 +8,7 @@ export interface Customer {
   propertyType: PropertyType
   squareFootage?: number
   systemType: string
-  systemAge?: number
+  systemAge?: number | string
   lastServiceDate?: string
 }
 

@@ -3,14 +3,11 @@ export type StepKey =
   | 'nameAddress'
   | 'phone'
   | 'propertyType'
-  | 'squareFootage'
-  | 'systemType'
-  | 'systemAge'
+  | 'systemDetails'
   | 'jobType'
   | 'level'
   | 'hours'
   | 'equipment'
-  | 'notes'
   | 'review'
 
 export const STEPS: StepKey[] = [
@@ -18,13 +15,10 @@ export const STEPS: StepKey[] = [
   'nameAddress',
   'phone',
   'propertyType',
-  'squareFootage',
-  'systemType',
-  'systemAge',
+  'systemDetails',
   'jobType',
   'level',
   'hours',
   'equipment',
-  'notes',
   'review',
 ]

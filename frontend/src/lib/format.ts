@@ -21,7 +21,7 @@ export function formatHours(hours: number): string {
 }
 
 export function formatDate(isoDate: string): string {
-  const date = new Date(`${isoDate}T00:00:00`)
+  const date = new Date(isoDate.includes('T') ? isoDate : `${isoDate}T00:00:00`)
   if (Number.isNaN(date.getTime())) return isoDate
   return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })
 }

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { Equipment, SelectedEquipment } from '../../types'
 import { formatCurrency } from '../../lib/format'
+import type { EquipmentRecommendation } from '../../lib/recommendations'
 
 interface EquipmentQuestionProps {
   catalog: Equipment[]
@@ -9,6 +10,7 @@ interface EquipmentQuestionProps {
   onAdd: (equipmentId: string) => void
   onRemove: (equipmentId: string) => void
   onSetQuantity: (equipmentId: string, quantity: number) => void
+  recommendations: EquipmentRecommendation[]
 }
 
 export default function EquipmentQuestion({
@@ -18,6 +20,7 @@ export default function EquipmentQuestion({
   onAdd,
   onRemove,
   onSetQuantity,
+  recommendations,
 }: EquipmentQuestionProps) {
   const [query, setQuery] = useState('')
   const [category, setCategory] = useState<string>('all')
@@ -48,6 +51,50 @@ export default function EquipmentQuestion({
 
   return (
     <div className="equipment-question">
+      {selectedItems.length > 0 && (
+        <div className="selected-parts selected-parts--cart" aria-live="polite">
+          <div className="selected-parts__heading">
+            <span className="field__label">Selected for this job ({selectedItems.length})</span>
+            <strong>{formatCurrency(partsSubtotal)}</strong>
+          </div>
+          {selectedItems.map(({ line, item }) => (
+            <div className="selected-part" key={item.id}>
+              <div className="selected-part__info">
+                <strong>{item.name}</strong>
+                <span>{formatCurrency(item.baseCost, true)} each</span>
+              </div>
+              <div className="selected-part__controls">
+                <div className="qty-stepper">
+                  <button
+                    type="button"
+                    onClick={() => onSetQuantity(item.id, Math.max(1, line.quantity - 1))}
+                    aria-label={`Decrease quantity of ${item.name}`}
+                  >
+                    &minus;
+                  </button>
+                  <span>{line.quantity}</span>
+                  <button
+                    type="button"
+                    onClick={() => onSetQuantity(item.id, line.quantity + 1)}
+                    aria-label={`Increase quantity of ${item.name}`}
+                  >
+                    +
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="remove-button"
+                  onClick={() => onRemove(item.id)}
+                  aria-label={`Remove ${item.name}`}
+                >
+                  Remove
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       <input
         type="search"
         className="question-input"
@@ -55,6 +102,41 @@ export default function EquipmentQuestion({
         value={query}
         onChange={(e) => setQuery(e.target.value)}
       />
+
+      {recommendations.length > 0 && (
+        <section className="equipment-recommendations" aria-labelledby="recommendations-title">
+          <div className="equipment-recommendations__heading">
+            <div>
+              <span className="field__label">Possible catalog matches</span>
+              <h2 id="recommendations-title">Suggested items to inspect</h2>
+            </div>
+            <span>{recommendations.length} matches</span>
+          </div>
+          <div className="equipment-recommendations__list">
+            {recommendations.map(({ item, reason }) => (
+              <div className="equipment-recommendation" key={item.id}>
+                <div>
+                  <strong>{item.name}</strong>
+                  <span>{item.brand} · {item.modelNumber} · {formatCurrency(item.baseCost, true)}</span>
+                  <p>{reason}</p>
+                </div>
+                <button
+                  type="button"
+                  className="add-button"
+                  disabled={selectedIds.has(item.id)}
+                  onClick={() => onAdd(item.id)}
+                >
+                  {selectedIds.has(item.id) ? 'Added' : 'Add'}
+                </button>
+              </div>
+            ))}
+          </div>
+          <p className="equipment-recommendations__disclaimer">
+            These are inspection shortcuts, not a diagnosis or matched-system design. Confirm
+            capacity, AHRI compatibility, electrical requirements, and sizing before adding one.
+          </p>
+        </section>
+      )}
 
       <div className="chip-group chip-group--scroll">
         <button
@@ -101,50 +183,10 @@ export default function EquipmentQuestion({
         {filtered.length === 0 && <p className="customer-results__empty">No matching items.</p>}
       </div>
 
-      {selectedItems.length > 0 && (
-        <div className="selected-parts">
-          <span className="field__label">Selected for this job</span>
-          {selectedItems.map(({ line, item }) => (
-            <div className="selected-part" key={item.id}>
-              <div className="selected-part__info">
-                <strong>{item.name}</strong>
-                <span>{formatCurrency(item.baseCost, true)} each</span>
-              </div>
-              <div className="selected-part__controls">
-                <div className="qty-stepper">
-                  <button
-                    type="button"
-                    onClick={() => onSetQuantity(item.id, Math.max(1, line.quantity - 1))}
-                    aria-label={`Decrease quantity of ${item.name}`}
-                  >
-                    &minus;
-                  </button>
-                  <span>{line.quantity}</span>
-                  <button
-                    type="button"
-                    onClick={() => onSetQuantity(item.id, line.quantity + 1)}
-                    aria-label={`Increase quantity of ${item.name}`}
-                  >
-                    +
-                  </button>
-                </div>
-                <button
-                  type="button"
-                  className="remove-button"
-                  onClick={() => onRemove(item.id)}
-                  aria-label={`Remove ${item.name}`}
-                >
-                  Remove
-                </button>
-              </div>
-            </div>
-          ))}
-          <div className="rate-card__total">
-            <span>Parts subtotal</span>
-            <strong>{formatCurrency(partsSubtotal)}</strong>
-          </div>
-        </div>
-      )}
+      <p className="pricing-note">
+        Prices shown are provided catalog costs, not configured customer selling prices. Estimated
+        tax is added automatically on Review.
+      </p>
     </div>
   )
 }

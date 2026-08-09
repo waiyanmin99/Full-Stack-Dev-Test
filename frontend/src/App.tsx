@@ -1,6 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './App.css'
-import { EMPTY_CUSTOMER_FORM, type CustomerFormState, type Customer, type SelectedEquipment } from './types'
+import {
+  EMPTY_CUSTOMER_FORM,
+  type CustomerFormState,
+  type Customer,
+  type SelectedEquipment,
+} from './types'
 import { customers, equipment, equipmentCategories, findRate, jobTypes, levelsForJobType } from './lib/normalize'
 import { defaultHoursFor, generateEstimateId, laborCost, laborRange, partsCost } from './lib/estimate'
 import { formatCurrency, phoneDigits } from './lib/format'
@@ -9,14 +14,28 @@ import { JOB_TYPE_LABELS, LEVEL_LABELS } from './lib/labels'
 import { STEPS } from './lib/steps'
 import QuestionLayout from './components/QuestionLayout'
 import ChoiceQuestion from './components/questions/ChoiceQuestion'
-import TextQuestion from './components/questions/TextQuestion'
 import PhoneQuestion from './components/questions/PhoneQuestion'
 import HoursQuestion from './components/questions/HoursQuestion'
 import LookupQuestion, { type LookupMode } from './components/questions/LookupQuestion'
 import NameAddressQuestion from './components/questions/NameAddressQuestion'
 import EquipmentQuestion from './components/questions/EquipmentQuestion'
-import NotesQuestion from './components/questions/NotesQuestion'
+import SystemDetailsQuestion from './components/questions/SystemDetailsQuestion'
 import ReviewStep from './components/ReviewStep'
+import { clearDraft, loadDraft, saveDraft } from './lib/draft'
+import { estimateTax } from './lib/pricing'
+import { recommendEquipment } from './lib/recommendations'
+import {
+  loadSavedCustomers,
+  mergeCustomers,
+  persistSavedCustomers,
+  upsertSavedCustomer,
+} from './lib/customerStore'
+import {
+  loadSavedEstimates,
+  persistSavedEstimates,
+  upsertSavedEstimate,
+  type SavedEstimate,
+} from './lib/estimateStore'
 
 function customerToForm(customer: Customer): CustomerFormState {
   const address = parseAddress(customer.address)
@@ -50,20 +69,33 @@ function ContinueButton({
   )
 }
 
+function RunningTotals({ labor, parts, total }: { labor: number; parts: number; total: number }) {
+  return (
+    <div className="running-totals" aria-label="Current estimate totals" aria-live="polite">
+      <span>Labor <strong>{formatCurrency(labor)}</strong></span>
+      <span>Parts <strong>{formatCurrency(parts)}</strong></span>
+      <span className="running-totals__grand">Total <strong>{formatCurrency(total)}</strong></span>
+    </div>
+  )
+}
+
 function App() {
-  const [stepIndex, setStepIndex] = useState(0)
-  const [lookupMode, setLookupMode] = useState<LookupMode>('ask')
+  const [initialDraft] = useState(() => loadDraft(generateEstimateId()))
+  const [stepIndex, setStepIndex] = useState(initialDraft.stepIndex)
+  const [lookupMode, setLookupMode] = useState<LookupMode>(initialDraft.lookupMode)
 
-  const [customerForm, setCustomerForm] = useState<CustomerFormState>(EMPTY_CUSTOMER_FORM)
+  const [customerForm, setCustomerForm] = useState<CustomerFormState>(initialDraft.customerForm)
 
-  const [jobType, setJobType] = useState('')
-  const [level, setLevel] = useState('')
-  const [hours, setHours] = useState(0)
+  const [jobType, setJobType] = useState(initialDraft.jobType)
+  const [level, setLevel] = useState(initialDraft.level)
+  const [hours, setHours] = useState(initialDraft.hours)
 
-  const [selectedEquipment, setSelectedEquipment] = useState<SelectedEquipment[]>([])
-  const [notes, setNotes] = useState('')
+  const [selectedEquipment, setSelectedEquipment] = useState<SelectedEquipment[]>(initialDraft.selectedEquipment)
+  const [notes, setNotes] = useState(initialDraft.notes)
+  const [savedCustomers, setSavedCustomers] = useState(loadSavedCustomers)
+  const [savedEstimates, setSavedEstimates] = useState(loadSavedEstimates)
 
-  const [estimateId] = useState(() => generateEstimateId())
+  const [estimateId, setEstimateId] = useState(initialDraft.estimateId)
   const estimateDate = useMemo(
     () => new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     [],
@@ -72,10 +104,50 @@ function App() {
   const rate = useMemo(() => findRate(jobType, level), [jobType, level])
   const laborTotal = useMemo(() => laborCost(rate, hours), [rate, hours])
   const partsSubtotal = useMemo(() => partsCost(selectedEquipment, equipment), [selectedEquipment])
-  const total = laborTotal + partsSubtotal
+  const subtotal = laborTotal + partsSubtotal
+  const taxEstimate = useMemo(
+    () => estimateTax(subtotal, customerForm),
+    [subtotal, customerForm],
+  )
+  const total = subtotal + taxEstimate.tax
   const range = useMemo(() => laborRange(rate), [rate])
-  const rangeMin = range.min + partsSubtotal
-  const rangeMax = range.max + partsSubtotal
+  const rangeMinSubtotal = range.min + partsSubtotal
+  const rangeMaxSubtotal = range.max + partsSubtotal
+  const rangeMin = rangeMinSubtotal * (1 + taxEstimate.ratePercent / 100)
+  const rangeMax = rangeMaxSubtotal * (1 + taxEstimate.ratePercent / 100)
+  const runningTotals = <RunningTotals labor={laborTotal} parts={partsSubtotal} total={total} />
+  const recommendations = useMemo(
+    () => recommendEquipment(customerForm, jobType, level, equipment),
+    [customerForm, jobType, level],
+  )
+  const allCustomers = useMemo(
+    () => mergeCustomers(customers, savedCustomers),
+    [savedCustomers],
+  )
+
+  useEffect(() => {
+    saveDraft({
+      stepIndex,
+      lookupMode,
+      customerForm,
+      jobType,
+      level,
+      hours,
+      selectedEquipment,
+      notes,
+      estimateId,
+    })
+  }, [
+    stepIndex,
+    lookupMode,
+    customerForm,
+    jobType,
+    level,
+    hours,
+    selectedEquipment,
+    notes,
+    estimateId,
+  ])
 
   const selectedItems = useMemo(
     () =>
@@ -89,6 +161,29 @@ function App() {
   )
 
   function goNext() {
+    const nextStep = STEPS[Math.min(stepIndex + 1, STEPS.length - 1)]
+    if (nextStep === 'review' && nameAddressValid) {
+      setSavedCustomers((previous) => {
+        const next = upsertSavedCustomer(customerForm, previous, allCustomers)
+        if (next !== previous) persistSavedCustomers(next)
+        return next
+      })
+      setSavedEstimates((previous) => {
+        const next = upsertSavedEstimate(previous, {
+          estimateId,
+          savedAt: new Date().toISOString(),
+          customerForm,
+          jobType,
+          level,
+          hours,
+          selectedEquipment,
+          notes,
+          total,
+        })
+        persistSavedEstimates(next)
+        return next
+      })
+    }
     setStepIndex((i) => Math.min(i + 1, STEPS.length - 1))
   }
 
@@ -133,6 +228,7 @@ function App() {
   }
 
   function handleStartOver() {
+    clearDraft()
     setStepIndex(0)
     setLookupMode('ask')
     setCustomerForm(EMPTY_CUSTOMER_FORM)
@@ -141,6 +237,21 @@ function App() {
     setHours(0)
     setSelectedEquipment([])
     setNotes('')
+    setSavedCustomers(loadSavedCustomers())
+    setSavedEstimates(loadSavedEstimates())
+    setEstimateId(generateEstimateId())
+  }
+
+  function handleResumeEstimate(estimate: SavedEstimate) {
+    setCustomerForm(estimate.customerForm)
+    setJobType(estimate.jobType)
+    setLevel(estimate.level)
+    setHours(estimate.hours)
+    setSelectedEquipment(estimate.selectedEquipment)
+    setNotes(estimate.notes)
+    setEstimateId(estimate.estimateId)
+    setLookupMode('ask')
+    setStepIndex(STEPS.indexOf('review'))
   }
 
   const stepKey = STEPS[stepIndex]
@@ -159,6 +270,40 @@ function App() {
     customerForm.city.trim() !== '' &&
     customerForm.state.trim() !== '' &&
     customerForm.zip.trim() !== ''
+
+  useEffect(() => {
+    if (stepKey !== 'review' || !nameAddressValid) return
+    const next = upsertSavedCustomer(customerForm, savedCustomers, allCustomers)
+    if (next !== savedCustomers) persistSavedCustomers(next)
+  }, [stepKey, nameAddressValid, customerForm, savedCustomers, allCustomers])
+
+  useEffect(() => {
+    if (stepKey !== 'review' || !nameAddressValid) return
+    const next = upsertSavedEstimate(savedEstimates, {
+      estimateId,
+      savedAt: new Date().toISOString(),
+      customerForm,
+      jobType,
+      level,
+      hours,
+      selectedEquipment,
+      notes,
+      total,
+    })
+    persistSavedEstimates(next)
+  }, [
+    stepKey,
+    nameAddressValid,
+    savedEstimates,
+    estimateId,
+    customerForm,
+    jobType,
+    level,
+    hours,
+    selectedEquipment,
+    notes,
+    total,
+  ])
 
   return (
     <div className="app-shell">
@@ -180,14 +325,17 @@ function App() {
           eyebrow="Let's build an estimate"
           title="Is this for an existing customer?"
           subtitle="Look them up to auto-fill their property, or start fresh for a new lead."
+          runningTotals={runningTotals}
         >
           <LookupQuestion
-            customers={customers}
+            customers={allCustomers}
             mode={lookupMode}
             onModeChange={setLookupMode}
             onSelectCustomer={handleSelectCustomer}
             onStartBlank={handleStartBlank}
             onContinue={goNext}
+            recentEstimates={savedEstimates}
+            onResumeEstimate={handleResumeEstimate}
           />
         </QuestionLayout>
       )}
@@ -199,6 +347,7 @@ function App() {
           onBack={onBack}
           title="Who's this estimate for?"
           footer={<ContinueButton disabled={!nameAddressValid} onClick={goNext} />}
+          runningTotals={runningTotals}
         >
           <NameAddressQuestion
             name={customerForm.name}
@@ -225,6 +374,7 @@ function App() {
           title="What's the best phone number?"
           subtitle="Optional — you can skip this."
           footer={<ContinueButton onClick={goNext} />}
+          runningTotals={runningTotals}
         >
           <PhoneQuestion
             value={customerForm.phone}
@@ -240,6 +390,7 @@ function App() {
           totalSteps={totalSteps}
           onBack={onBack}
           title="Is this a residential or commercial property?"
+          runningTotals={runningTotals}
         >
           <ChoiceQuestion
             value={customerForm.propertyType}
@@ -253,61 +404,24 @@ function App() {
         </QuestionLayout>
       )}
 
-      {stepKey === 'squareFootage' && (
+      {stepKey === 'systemDetails' && (
         <QuestionLayout
           stepNumber={stepNumber}
           totalSteps={totalSteps}
           onBack={onBack}
-          title="About how big is the property?"
-          subtitle="Square footage in feet — optional."
+          title="Tell us about the property and system"
+          subtitle="Add what you know; all three fields are optional."
           footer={<ContinueButton onClick={goNext} />}
+          runningTotals={runningTotals}
         >
-          <TextQuestion
-            type="number"
-            value={customerForm.squareFootage}
-            onChange={(v) => handleChangeForm({ squareFootage: v })}
+          <SystemDetailsQuestion
+            squareFootage={customerForm.squareFootage}
+            systemType={customerForm.systemType}
+            systemAge={customerForm.systemAge}
+            onChangeSquareFootage={(v) => handleChangeForm({ squareFootage: v })}
+            onChangeSystemType={(v) => handleChangeForm({ systemType: v })}
+            onChangeSystemAge={(v) => handleChangeForm({ systemAge: v })}
             onSubmit={goNext}
-            canSubmit
-            placeholder="2200"
-          />
-        </QuestionLayout>
-      )}
-
-      {stepKey === 'systemType' && (
-        <QuestionLayout
-          stepNumber={stepNumber}
-          totalSteps={totalSteps}
-          onBack={onBack}
-          title="What system is currently installed?"
-          subtitle="Optional."
-          footer={<ContinueButton onClick={goNext} />}
-        >
-          <TextQuestion
-            value={customerForm.systemType}
-            onChange={(v) => handleChangeForm({ systemType: v })}
-            onSubmit={goNext}
-            canSubmit
-            placeholder="Central AC + Gas Furnace"
-          />
-        </QuestionLayout>
-      )}
-
-      {stepKey === 'systemAge' && (
-        <QuestionLayout
-          stepNumber={stepNumber}
-          totalSteps={totalSteps}
-          onBack={onBack}
-          title="How old is the current system?"
-          subtitle="In years — optional."
-          footer={<ContinueButton onClick={goNext} />}
-        >
-          <TextQuestion
-            type="number"
-            value={customerForm.systemAge}
-            onChange={(v) => handleChangeForm({ systemAge: v })}
-            onSubmit={goNext}
-            canSubmit
-            placeholder="12"
           />
         </QuestionLayout>
       )}
@@ -318,6 +432,7 @@ function App() {
           totalSteps={totalSteps}
           onBack={onBack}
           title="What type of job is this?"
+          runningTotals={runningTotals}
         >
           <ChoiceQuestion
             value={jobType}
@@ -338,6 +453,7 @@ function App() {
           totalSteps={totalSteps}
           onBack={onBack}
           title="What level of work does it need?"
+          runningTotals={runningTotals}
         >
           <ChoiceQuestion
             value={level}
@@ -360,6 +476,7 @@ function App() {
           title="How many hours will this job take?"
           subtitle="We've set a typical starting point — drag to adjust."
           footer={<ContinueButton onClick={goNext} />}
+          runningTotals={runningTotals}
         >
           <HoursQuestion rate={rate} hours={hours} onChange={setHours} />
         </QuestionLayout>
@@ -371,8 +488,9 @@ function App() {
           totalSteps={totalSteps}
           onBack={onBack}
           title="Does this job need equipment or parts?"
-          subtitle="Search the catalog and add anything needed. Skip if it's labor only."
+          subtitle="Your selected items stay at the top. Search or filter the catalog; skip for labor-only work."
           footer={<ContinueButton onClick={goNext} />}
+          runningTotals={runningTotals}
         >
           <EquipmentQuestion
             catalog={equipment}
@@ -381,20 +499,8 @@ function App() {
             onAdd={handleAddEquipment}
             onRemove={handleRemoveEquipment}
             onSetQuantity={handleSetQuantity}
+            recommendations={recommendations}
           />
-        </QuestionLayout>
-      )}
-
-      {stepKey === 'notes' && (
-        <QuestionLayout
-          stepNumber={stepNumber}
-          totalSteps={totalSteps}
-          onBack={onBack}
-          title="Anything else the office should know?"
-          subtitle="Optional."
-          footer={<ContinueButton label="See my estimate" onClick={goNext} />}
-        >
-          <NotesQuestion value={notes} onChange={setNotes} />
         </QuestionLayout>
       )}
 
@@ -414,6 +520,8 @@ function App() {
           selectedItems={selectedItems}
           partsSubtotal={partsSubtotal}
           total={total}
+          taxEstimate={taxEstimate}
+          customerSaved={nameAddressValid}
           rangeMin={rangeMin}
           rangeMax={rangeMax}
           notes={notes}

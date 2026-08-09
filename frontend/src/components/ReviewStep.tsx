@@ -1,6 +1,13 @@
-import type { CustomerFormState, Equipment, LaborRate, SelectedEquipment } from '../types'
+import type {
+  CustomerFormState,
+  Equipment,
+  LaborRate,
+  SelectedEquipment,
+} from '../types'
 import { formatCurrency, formatHours, formatUSPhone } from '../lib/format'
 import { JOB_TYPE_LABELS } from '../lib/labels'
+import { formatSystemAge } from '../data/systemAges'
+import type { TaxEstimate } from '../lib/pricing'
 import QuestionLayout from './QuestionLayout'
 
 interface ReviewStepProps {
@@ -18,6 +25,8 @@ interface ReviewStepProps {
   selectedItems: { line: SelectedEquipment; item: Equipment }[]
   partsSubtotal: number
   total: number
+  taxEstimate: TaxEstimate
+  customerSaved: boolean
   rangeMin: number
   rangeMax: number
   notes: string
@@ -41,6 +50,8 @@ export default function ReviewStep({
   selectedItems,
   partsSubtotal,
   total,
+  taxEstimate,
+  customerSaved,
   rangeMin,
   rangeMax,
   notes,
@@ -83,7 +94,10 @@ export default function ReviewStep({
         </div>
 
         <div className="estimate-doc__section">
-          <span className="estimate-doc__label">Customer</span>
+          <div className="estimate-doc__section-heading">
+            <span className="estimate-doc__label">Customer</span>
+            {customerSaved && <span className="saved-customer-badge no-print">Saved on this device</span>}
+          </div>
           <div className="estimate-doc__grid">
             <div>
               <strong>{customer.name || 'Walk-in customer'}</strong>
@@ -101,7 +115,7 @@ export default function ReviewStep({
               <div>{customer.propertyType === 'commercial' ? 'Commercial' : 'Residential'} property</div>
               {customer.squareFootage && <div>{customer.squareFootage} sq ft</div>}
               {customer.systemType && <div>{customer.systemType}</div>}
-              {customer.systemAge && <div>System age: {customer.systemAge} yrs</div>}
+              {customer.systemAge && <div>System age: {formatSystemAge(customer.systemAge)}</div>}
             </div>
           </div>
         </div>
@@ -153,8 +167,16 @@ export default function ReviewStep({
             <span>{formatCurrency(laborTotal)}</span>
           </div>
           <div className="estimate-doc__totals-row">
-            <span>Parts subtotal</span>
+            <span>Catalog equipment subtotal</span>
             <span>{formatCurrency(partsSubtotal)}</span>
+          </div>
+          <div className="estimate-doc__totals-row">
+            <span>
+              {taxEstimate.ratePercent > 0
+                ? `Estimated tax (${taxEstimate.ratePercent}%)`
+                : 'Estimated tax unavailable'}
+            </span>
+            <span>{formatCurrency(taxEstimate.tax)}</span>
           </div>
           <div className="estimate-doc__totals-row estimate-doc__totals-row--grand">
             <span>Estimated total</span>
@@ -182,9 +204,14 @@ export default function ReviewStep({
         )}
 
         <p className="estimate-doc__disclaimer">
-          This estimate is based on information available at the time of the visit and is valid
-          for 30 days. Final pricing may vary if additional work is identified once the job is
-          underway.
+          This estimate is based on information available at the time of the visit and is valid for
+          30 days. Equipment uses provided catalog cost, not a configured selling price.{' '}
+          {taxEstimate.ratePercent === 0
+            ? 'A tax estimate was unavailable for this location; confirm tax before invoicing. '
+            : taxEstimate.isCitySpecific
+              ? `Estimated tax uses the available combined rate for ${taxEstimate.basis}; confirm tax before invoicing. `
+              : `Estimated tax uses the ${taxEstimate.basis} state base rate and may exclude local district tax; confirm tax before invoicing. `}
+          Final pricing may vary if additional work is identified once the job is underway.
         </p>
       </div>
     </QuestionLayout>
