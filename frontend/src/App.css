@@ -313,6 +313,27 @@ button:focus-visible {
   border-color: var(--navy);
 }
 
+.choice-list--grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.choice-list--grid .choice-option--compact:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
+.choice-option--compact {
+  padding: 11px 12px;
+  gap: 2px;
+  font-size: 14px;
+  min-height: 44px;
+}
+
+.choice-option--compact .choice-option__helper {
+  font-size: 11px;
+}
+
 .choice-option--active {
   border-color: var(--navy);
   background: var(--navy-tint);
@@ -494,6 +515,18 @@ input[type='range'] {
 .hours-question__cost strong {
   color: var(--amber-dark);
   font-size: 19px;
+}
+
+.hours-question--compact {
+  gap: 10px;
+}
+
+.hours-question--compact .hours-question__value {
+  font-size: 24px;
+}
+
+.hours-question--compact .hours-question__cost {
+  padding: 11px 14px;
 }
 
 /* ---------- equipment question ---------- */

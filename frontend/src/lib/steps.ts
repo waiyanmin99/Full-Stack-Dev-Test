@@ -4,8 +4,7 @@ export type StepKey =
   | 'contactProperty'
   | 'systemDetails'
   | 'jobType'
-  | 'level'
-  | 'hours'
+  | 'levelHours'
   | 'equipment'
   | 'review'
 
@@ -15,8 +14,7 @@ export const STEPS: StepKey[] = [
   'contactProperty',
   'systemDetails',
   'jobType',
-  'level',
-  'hours',
+  'levelHours',
   'equipment',
   'review',
 ]

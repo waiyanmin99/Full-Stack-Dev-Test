@@ -9,9 +9,16 @@ interface ChoiceQuestionProps {
   value: string
   onSelect: (value: string) => void
   onContinue?: () => void
+  compact?: boolean
 }
 
-export default function ChoiceQuestion({ options, value, onSelect, onContinue }: ChoiceQuestionProps) {
+export default function ChoiceQuestion({
+  options,
+  value,
+  onSelect,
+  onContinue,
+  compact = false,
+}: ChoiceQuestionProps) {
   function handleClick(optionValue: string) {
     onSelect(optionValue)
     if (onContinue) {
@@ -20,12 +27,12 @@ export default function ChoiceQuestion({ options, value, onSelect, onContinue }:
   }
 
   return (
-    <div className="choice-list">
+    <div className={`choice-list${compact ? ' choice-list--grid' : ''}`}>
       {options.map((option) => (
         <button
           type="button"
           key={option.value}
-          className={`choice-option${value === option.value ? ' choice-option--active' : ''}`}
+          className={`choice-option${compact ? ' choice-option--compact' : ''}${value === option.value ? ' choice-option--active' : ''}`}
           onClick={() => handleClick(option.value)}
         >
           <span className="choice-option__label">{option.label}</span>
