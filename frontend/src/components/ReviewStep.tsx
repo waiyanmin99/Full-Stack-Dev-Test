@@ -1,3 +1,4 @@
+import { useRef, useState } from 'react'
 import type {
   CustomerFormState,
   Equipment,
@@ -55,6 +56,48 @@ export default function ReviewStep({
   onPrint,
   onStartOver,
 }: ReviewStepProps) {
+  const docRef = useRef<HTMLDivElement>(null)
+  const [shareStatus, setShareStatus] = useState<'idle' | 'generating' | 'downloaded' | 'error'>(
+    'idle',
+  )
+
+  async function handleShare() {
+    if (!docRef.current || shareStatus === 'generating') return
+    setShareStatus('generating')
+    try {
+      const { elementToPdfFile } = await import('../lib/pdf')
+      const file = await elementToPdfFile(docRef.current, `estimate-${estimateId}.pdf`)
+      const nav = navigator as Navigator & {
+        canShare?: (data: { files: File[] }) => boolean
+        share?: (data: { files: File[]; title?: string; text?: string }) => Promise<void>
+      }
+      if (nav.canShare?.({ files: [file] }) && nav.share) {
+        await nav.share({
+          files: [file],
+          title: `Estimate ${estimateId}`,
+          text: `Estimate ${estimateId} for ${customer.name || 'your service'} — ${formatCurrency(total)}`,
+        })
+        setShareStatus('idle')
+      } else {
+        const url = URL.createObjectURL(file)
+        const link = document.createElement('a')
+        link.href = url
+        link.download = file.name
+        document.body.appendChild(link)
+        link.click()
+        link.remove()
+        window.setTimeout(() => URL.revokeObjectURL(url), 1000)
+        setShareStatus('downloaded')
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        setShareStatus('idle')
+      } else {
+        setShareStatus('error')
+      }
+    }
+  }
+
   return (
     <QuestionLayout
       stepNumber={stepNumber}
@@ -62,16 +105,36 @@ export default function ReviewStep({
       onBack={onBack}
       footer={
         <div className="review-footer">
-          <button type="button" className="secondary-button" onClick={onStartOver}>
-            Start new estimate
+          <button
+            type="button"
+            className="primary-button review-footer__share"
+            onClick={() => void handleShare()}
+            disabled={shareStatus === 'generating'}
+          >
+            {shareStatus === 'generating' ? 'Preparing PDF…' : 'Share estimate PDF'}
           </button>
-          <button type="button" className="primary-button" onClick={onPrint}>
-            Print / Save PDF
-          </button>
+          {shareStatus === 'downloaded' && (
+            <p className="review-footer__hint">
+              PDF downloaded — attach it in your messaging app to text it to the customer.
+            </p>
+          )}
+          {shareStatus === 'error' && (
+            <p className="review-footer__hint review-footer__hint--error">
+              Couldn't prepare the PDF. Try Print / Save PDF instead.
+            </p>
+          )}
+          <div className="review-footer__row">
+            <button type="button" className="secondary-button" onClick={onStartOver}>
+              Start new estimate
+            </button>
+            <button type="button" className="secondary-button" onClick={onPrint}>
+              Print / Save PDF
+            </button>
+          </div>
         </div>
       }
     >
-      <div className="estimate-doc">
+      <div className="estimate-doc" ref={docRef}>
         <div className="estimate-doc__letterhead print-only">
           <img src="/logo-mark.png" alt="" width={28} height={28} />
           <div>
