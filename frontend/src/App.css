@@ -783,6 +783,27 @@ input[type='range'] {
   gap: 18px;
 }
 
+/* ---------- compact multi-section screens ---------- */
+
+.compact-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.compact-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.compact-section:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
 .address-row {
   display: flex;
   gap: 12px;

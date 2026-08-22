@@ -8,18 +8,18 @@ import {
 } from './types'
 import { customers, equipment, equipmentCategories, findRate, jobTypes, levelsForJobType } from './lib/normalize'
 import { defaultHoursFor, generateEstimateId, laborCost, laborRange, partsCost } from './lib/estimate'
-import { formatCurrency, phoneDigits } from './lib/format'
+import { phoneDigits } from './lib/format'
 import { parseAddress } from './lib/address'
-import { JOB_TYPE_LABELS, LEVEL_LABELS } from './lib/labels'
+import { JOB_TYPE_LABELS } from './lib/labels'
 import { STEPS } from './lib/steps'
 import QuestionLayout from './components/QuestionLayout'
 import ChoiceQuestion from './components/questions/ChoiceQuestion'
-import PhoneQuestion from './components/questions/PhoneQuestion'
-import HoursQuestion from './components/questions/HoursQuestion'
 import LookupQuestion, { type LookupMode } from './components/questions/LookupQuestion'
 import NameAddressQuestion from './components/questions/NameAddressQuestion'
 import EquipmentQuestion from './components/questions/EquipmentQuestion'
+import ContactPropertyQuestion from './components/questions/ContactPropertyQuestion'
 import SystemDetailsQuestion from './components/questions/SystemDetailsQuestion'
+import LevelHoursQuestion from './components/questions/LevelHoursQuestion'
 import ReviewStep from './components/ReviewStep'
 import { clearDraft, loadDraft, saveDraft } from './lib/draft'
 import { estimateTax } from './lib/pricing'
@@ -354,38 +354,20 @@ function App() {
         </QuestionLayout>
       )}
 
-      {stepKey === 'phone' && (
+      {stepKey === 'contactProperty' && (
         <QuestionLayout
           stepNumber={stepNumber}
           totalSteps={totalSteps}
           onBack={onBack}
-          title="What's the best phone number?"
-          subtitle="Optional — you can skip this."
+          title="Contact & property"
+          subtitle="Phone is optional."
           footer={<ContinueButton onClick={goNext} />}
         >
-          <PhoneQuestion
-            value={customerForm.phone}
-            onChange={(v) => handleChangeForm({ phone: v })}
-            onSubmit={goNext}
-          />
-        </QuestionLayout>
-      )}
-
-      {stepKey === 'propertyType' && (
-        <QuestionLayout
-          stepNumber={stepNumber}
-          totalSteps={totalSteps}
-          onBack={onBack}
-          title="Is this a residential or commercial property?"
-        >
-          <ChoiceQuestion
-            value={customerForm.propertyType}
-            onSelect={(v) => handleChangeForm({ propertyType: v as 'residential' | 'commercial' })}
-            onContinue={goNext}
-            options={[
-              { value: 'residential', label: 'Residential' },
-              { value: 'commercial', label: 'Commercial' },
-            ]}
+          <ContactPropertyQuestion
+            phone={customerForm.phone}
+            onChangePhone={(v) => handleChangeForm({ phone: v })}
+            propertyType={customerForm.propertyType}
+            onChangePropertyType={(v) => handleChangeForm({ propertyType: v })}
           />
         </QuestionLayout>
       )}
@@ -431,36 +413,23 @@ function App() {
         </QuestionLayout>
       )}
 
-      {stepKey === 'level' && (
+      {stepKey === 'levelHours' && (
         <QuestionLayout
           stepNumber={stepNumber}
           totalSteps={totalSteps}
           onBack={onBack}
-          title="What level of work does it need?"
+          title="Level of work & hours"
+          subtitle="We've set a typical starting point for hours — drag to adjust."
           footer={<ContinueButton disabled={!level} onClick={goNext} />}
         >
-          <ChoiceQuestion
-            value={level}
-            onSelect={handleSelectLevel}
-            options={levelsForJobType(jobType).map((r) => ({
-              value: r.level,
-              label: LEVEL_LABELS[r.level] ?? r.level,
-              helper: `${formatCurrency(r.hourlyRate, true)}/hr · ${r.estimatedHours.min}–${r.estimatedHours.max} hrs`,
-            }))}
+          <LevelHoursQuestion
+            level={level}
+            levels={levelsForJobType(jobType)}
+            rate={rate}
+            hours={hours}
+            onSelectLevel={handleSelectLevel}
+            onChangeHours={setHours}
           />
-        </QuestionLayout>
-      )}
-
-      {stepKey === 'hours' && rate && (
-        <QuestionLayout
-          stepNumber={stepNumber}
-          totalSteps={totalSteps}
-          onBack={onBack}
-          title="How many hours will this job take?"
-          subtitle="We've set a typical starting point — drag to adjust."
-          footer={<ContinueButton onClick={goNext} />}
-        >
-          <HoursQuestion rate={rate} hours={hours} onChange={setHours} />
         </QuestionLayout>
       )}
 
