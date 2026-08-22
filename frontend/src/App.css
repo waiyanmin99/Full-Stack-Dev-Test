@@ -1029,6 +1029,12 @@ select.question-input {
   gap: 18px;
 }
 
+@media (max-width: 480px) {
+  .estimate-doc {
+    padding: 18px;
+  }
+}
+
 .estimate-doc__letterhead.print-only {
   display: none;
 }
@@ -1104,7 +1110,7 @@ select.question-input {
 .estimate-doc__grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  gap: 10px;
   font-size: 14px;
   color: var(--text);
 }
@@ -1113,9 +1119,10 @@ select.question-input {
   color: var(--text-h);
 }
 
-@media (max-width: 480px) {
+@media (max-width: 360px) {
   .estimate-doc__grid {
-    grid-template-columns: 1fr;
+    gap: 8px;
+    font-size: 13px;
   }
 }
 
