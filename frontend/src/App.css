@@ -1029,15 +1029,35 @@ select.question-input {
   gap: 18px;
 }
 
+.estimate-doc__letterhead.print-only {
+  display: none;
+}
+
+@media print {
+  .estimate-doc__letterhead.print-only {
+    display: flex;
+  }
+}
+
 .estimate-doc__letterhead {
-  display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.estimate-doc__letterhead div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.35;
 }
 
 .estimate-doc__letterhead strong {
   font-size: 15px;
   color: var(--text-h);
+}
+
+.estimate-doc__letterhead span {
+  font-size: 11.5px;
+  color: var(--text-muted);
 }
 
 .estimate-doc__section {

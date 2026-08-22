@@ -27,8 +27,6 @@ interface ReviewStepProps {
   total: number
   taxEstimate: TaxEstimate
   customerSaved: boolean
-  rangeMin: number
-  rangeMax: number
   notes: string
   onNotesChange: (notes: string) => void
   onPrint: () => void
@@ -52,8 +50,6 @@ export default function ReviewStep({
   total,
   taxEstimate,
   customerSaved,
-  rangeMin,
-  rangeMax,
   notes,
   onNotesChange,
   onPrint,
@@ -64,13 +60,6 @@ export default function ReviewStep({
       stepNumber={stepNumber}
       totalSteps={totalSteps}
       onBack={onBack}
-      eyebrow={`Estimate ${estimateId} · ${estimateDate}`}
-      title="Here's your estimate"
-      subtitle={
-        rangeMin !== rangeMax
-          ? `Could range ${formatCurrency(rangeMin)} – ${formatCurrency(rangeMax)} depending on final scope`
-          : undefined
-      }
       footer={
         <div className="review-footer">
           <button type="button" className="secondary-button" onClick={onStartOver}>
@@ -85,7 +74,12 @@ export default function ReviewStep({
       <div className="estimate-doc">
         <div className="estimate-doc__letterhead print-only">
           <img src="/logo-mark.png" alt="" width={28} height={28} />
-          <strong>Right Click</strong>
+          <div>
+            <strong>Right Click</strong>
+            <span>
+              Estimate {estimateId} · {estimateDate}
+            </span>
+          </div>
         </div>
 
         <div className="estimate-doc__section">

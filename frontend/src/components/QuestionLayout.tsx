@@ -5,7 +5,7 @@ interface QuestionLayoutProps {
   totalSteps: number
   onBack?: () => void
   eyebrow?: string
-  title: string
+  title?: string
   subtitle?: string
   children: ReactNode
   footer?: ReactNode
@@ -45,7 +45,7 @@ export default function QuestionLayout({
       <main className="question-main">
         <div className="question-card">
           {eyebrow && <span className="question-eyebrow">{eyebrow}</span>}
-          <h1 className="question-title">{title}</h1>
+          {title && <h1 className="question-title">{title}</h1>}
           {subtitle && <p className="question-subtitle">{subtitle}</p>}
           <div className="question-content">{children}</div>
         </div>

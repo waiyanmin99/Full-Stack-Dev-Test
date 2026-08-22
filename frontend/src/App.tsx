@@ -7,7 +7,7 @@ import {
   type SelectedEquipment,
 } from './types'
 import { customers, equipment, equipmentCategories, findRate, jobTypes, levelsForJobType } from './lib/normalize'
-import { defaultHoursFor, generateEstimateId, laborCost, laborRange, partsCost } from './lib/estimate'
+import { defaultHoursFor, generateEstimateId, laborCost, partsCost } from './lib/estimate'
 import { phoneDigits } from './lib/format'
 import { parseAddress } from './lib/address'
 import { JOB_TYPE_LABELS } from './lib/labels'
@@ -100,11 +100,6 @@ function App() {
     [subtotal, customerForm],
   )
   const total = subtotal + taxEstimate.tax
-  const range = useMemo(() => laborRange(rate), [rate])
-  const rangeMinSubtotal = range.min + partsSubtotal
-  const rangeMaxSubtotal = range.max + partsSubtotal
-  const rangeMin = rangeMinSubtotal * (1 + taxEstimate.ratePercent / 100)
-  const rangeMax = rangeMaxSubtotal * (1 + taxEstimate.ratePercent / 100)
   const recommendations = useMemo(
     () => recommendEquipment(customerForm, jobType, level, equipment),
     [customerForm, jobType, level],
@@ -472,8 +467,6 @@ function App() {
           total={total}
           taxEstimate={taxEstimate}
           customerSaved={nameAddressValid}
-          rangeMin={rangeMin}
-          rangeMax={rangeMax}
           notes={notes}
           onNotesChange={setNotes}
           onPrint={() => window.print()}
