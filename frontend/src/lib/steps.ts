@@ -1,3 +1,24 @@
-export type StepKey = 'customer' | 'jobLabor' | 'equipment' | 'review'
+export type StepKey =
+  | 'lookup'
+  | 'nameAddress'
+  | 'phone'
+  | 'propertyType'
+  | 'systemDetails'
+  | 'jobType'
+  | 'level'
+  | 'hours'
+  | 'equipment'
+  | 'review'
 
-export const STEPS: StepKey[] = ['customer', 'jobLabor', 'equipment', 'review']
+export const STEPS: StepKey[] = [
+  'lookup',
+  'nameAddress',
+  'phone',
+  'propertyType',
+  'systemDetails',
+  'jobType',
+  'level',
+  'hours',
+  'equipment',
+  'review',
+]

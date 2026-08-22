@@ -3,12 +3,14 @@ import {
   type CustomerFormState,
   type SelectedEquipment,
 } from '../types'
+import type { LookupMode } from '../components/questions/LookupQuestion'
 import { STEPS } from './steps'
 
 const DRAFT_KEY = 'fieldquote-estimate-draft-v1'
 
 export interface EstimateDraft {
   stepIndex: number
+  lookupMode: LookupMode
   customerForm: CustomerFormState
   jobType: string
   level: string
@@ -21,6 +23,7 @@ export interface EstimateDraft {
 export function emptyDraft(estimateId: string): EstimateDraft {
   return {
     stepIndex: 0,
+    lookupMode: 'ask',
     customerForm: EMPTY_CUSTOMER_FORM,
     jobType: '',
     level: '',
