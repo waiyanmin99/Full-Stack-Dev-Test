@@ -82,13 +82,8 @@ export default function ReviewStep({
         </div>
       }
     >
-      <div className="quote-hero">
-        <span>Estimated total</span>
-        <strong>{formatCurrency(total)}</strong>
-      </div>
-
       <div className="estimate-doc">
-        <div className="estimate-doc__letterhead">
+        <div className="estimate-doc__letterhead print-only">
           <img src="/logo-mark.png" alt="" width={28} height={28} />
           <strong>Right Click</strong>
         </div>

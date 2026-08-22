@@ -107,7 +107,7 @@
   flex: 1;
   width: 100%;
   box-sizing: border-box;
-  padding: 24px 20px 140px;
+  padding: 24px 20px 28px;
 }
 
 .question-card {
@@ -150,7 +150,7 @@
     font-size: 24px;
   }
   .question-main {
-    padding: 18px 16px 140px;
+    padding: 18px 16px 24px;
   }
 }
 
@@ -985,38 +985,12 @@ select.question-input {
 
 /* ---------- review / quote result ---------- */
 
-.quote-hero {
-  text-align: center;
-  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);
-  color: #fff;
-  border-radius: var(--radius);
-  padding: 30px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.quote-hero span {
-  font-size: 13px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  opacity: 0.85;
-}
-
-.quote-hero strong {
-  font-size: 46px;
-  font-weight: 800;
-  color: var(--amber);
-  letter-spacing: -1px;
-}
-
 .estimate-doc {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-sm);
   padding: 26px;
-  margin-top: 18px;
   display: flex;
   flex-direction: column;
   gap: 18px;
@@ -1133,10 +1107,14 @@ select.question-input {
 .estimate-doc__totals-row--grand {
   border-top: 1px solid var(--border);
   margin-top: 6px;
-  padding-top: 10px;
-  font-size: 19px;
-  font-weight: 700;
+  padding-top: 12px;
+  font-size: 24px;
+  font-weight: 800;
   color: var(--text-h);
+}
+
+.estimate-doc__totals-row--grand span:last-child {
+  color: var(--amber-dark);
 }
 
 .estimate-doc__disclaimer {
@@ -1163,10 +1141,5 @@ select.question-input {
     border: none;
     padding: 0;
     margin-top: 16px;
-  }
-  .quote-hero {
-    color: #fff;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
   }
 }
